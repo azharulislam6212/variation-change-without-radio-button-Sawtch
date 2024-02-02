@@ -1,0 +1,118 @@
+
+
+  {%- assign currentProductId = section.id | append: '-' | append: product.id -%}
+  {%- assign product_form_id = 'product-form-' | append: currentProductId -%}
+
+  {% assign current_variant = product.selected_or_first_available_variant %}
+  
+  {%- form 'product',
+    product,
+    class: 'main-product-form',
+    id: product_form_id,
+    novalidate: 'novalidate'
+  -%}
+
+  <input type="hidden" name="id" value="{{current_variant.id }}">
+
+
+
+
+  {% unless product.has_only_default_variant %}
+    {% assign option_index = 0 %}
+
+    {%- for option in product.options_with_values -%}
+    
+      <div class="variation-wrap"> 
+
+      <div class="variation-label">{{ option.name }}</div>
+
+      <div class="selection-wrap">
+
+      {% assign values = '' %}
+      {% assign option_index = forloop.index0 %}
+      {% for variant in product.variants %}
+        {% assign value = variant.options[option_index] %}
+        {% unless values contains value %}
+
+        {% assign values = values | join: ',' %}
+        {% assign values = values | append: ',' | append: value %}
+        {% assign values = values | split: ',' %}
+        <div class="selection-btn {%if current_variant.id == variant.id %} is-active-filter {% endif %}" data-value="{{ value | escape }}">
+              <div class="selection-btn_text">
+                {{ value | escape }}
+              </div>
+            </div>
+            
+          {% endunless %}
+          {% endfor %}
+
+              
+      </div>
+      </div>
+
+   
+       {% endfor %}
+
+        {% unless product == empty %}
+          <script type="application/json" data-product-json>
+            {{ product | json }}
+          </script>
+       {% endunless %}
+
+
+  {% endunless %}
+  
+
+ 
+  <button type="submit"  class="dropdown-btn w-inline-block add-to-cart ">
+    <div class="result-btn_text">Add to Cart</div>
+  </button>
+
+{%- endform -%}
+
+<script>
+var datajson = document.querySelector('script[data-product-json]');
+
+if(datajson != null){
+
+var product_encodedObject = datajson.textContent;
+var product_dataObject = JSON.parse(product_encodedObject);
+var variants = product_dataObject.variants;
+let userSelectValues = [...variants];
+
+
+
+const Selector =  $('.selection-btn');
+
+Selector.on('click', function() {
+  $(this).closest('.selection-wrap').find('.selection-btn').removeClass("is-active-filter");
+  $(this).addClass("is-active-filter");
+
+   userSelectValues = [];
+
+  $('.selection-btn.is-active-filter').each(function( index ) {
+    var value = $(this).data('value');
+      userSelectValues.push(value);
+  
+  });
+  const matchedVariants = variants.find(variant => {
+    let match = true;
+          
+    for (let i = 0; i < userSelectValues.length; i++) {
+        if (userSelectValues.indexOf(variant.options[i]) == -1) {
+            match = false;
+            break;
+        }
+    }
+    return match;
+}); 
+document.querySelector('.main-product-form input[name="id"]').value = matchedVariants.id;
+
+console.log(matchedVariants);
+
+});
+
+
+}
+</script>
+
